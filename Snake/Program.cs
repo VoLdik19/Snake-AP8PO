@@ -2,13 +2,77 @@
 {
     class Program
     {
+
+        static Pixel berry = new Pixel();
+
+
+        /*
+         * Refreshes the play area
+         */
+        static void DrawPlayArea(int x, int y, ConsoleColor color, char areaBlock)
+        {
+            Console.ForegroundColor = color;
+            for (int i = 0; i < x; i++)
+            {
+                Console.SetCursorPosition(i, 0);
+                Console.Write(areaBlock);
+            }
+            for (int i = 0; i < x; i++)
+            {
+                Console.SetCursorPosition(i, y - 1);
+                Console.Write(areaBlock);
+            }
+            for (int i = 0; i < y; i++)
+            {
+                Console.SetCursorPosition(0, i);
+                Console.Write(areaBlock);
+            }
+            for (int i = 0; i < y; i++)
+            {
+                Console.SetCursorPosition(x - 1, i);
+                Console.Write(areaBlock);
+            }
+        }
+        /*
+         * Refreshes the snake
+         */
+        static void DrawSnake()
+        {
+
+        }
+
+        /*
+         * Refreshes the berry
+         */
+        static void DrawBerry()
+        {
+            Console.SetCursorPosition(berry.x, berry.y);
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.Write("B");
+        }
+
+        /*
+         * Spawns a new berry on the play area
+         */
+        static void SpawnBerry(int x, int y)
+        {
+            Random randomNumber = new Random();
+
+            berry.x = randomNumber.Next(0, x);
+            berry.y = randomNumber.Next(0, y);
+
+
+            berry.x = randomNumber.Next(1, x);
+            berry.y = randomNumber.Next(1, y);
+        }
+
         static void Main(string[] args)
         {
-            Console.WindowHeight = 16;
-            Console.WindowWidth = 32;
+
+            Console.WindowHeight = 48;
+            Console.WindowWidth = 48;
             int screenWidth = Console.WindowWidth;
             int screenHeight = Console.WindowHeight;
-            Random randomNumber = new Random();
             int score = 5;
             int gameOver = 0;
             Pixel snakeHead = new Pixel();
@@ -18,9 +82,7 @@
             string currentStep = "RIGHT";
             List<int> xBorder = new List<int>();
             List<int> yBorder = new List<int>();
-            Pixel berry = new Pixel();
-            berry.x = randomNumber.Next(0, screenWidth);
-            berry.y = randomNumber.Next(0, screenHeight);
+            
             DateTime startTime = DateTime.Now;
             DateTime frameTime = DateTime.Now;
             string buttonPressed = "no";
@@ -31,33 +93,17 @@
                 {
                     gameOver = 1;
                 }
-                for (int i = 0; i < screenWidth; i++)
-                {
-                    Console.SetCursorPosition(i, 0);
-                    Console.Write("■");
-                }
-                for (int i = 0; i < screenWidth; i++)
-                {
-                    Console.SetCursorPosition(i, screenHeight - 1);
-                    Console.Write("■");
-                }
-                for (int i = 0; i < screenHeight; i++)
-                {
-                    Console.SetCursorPosition(0, i);
-                    Console.Write("■");
-                }
-                for (int i = 0; i < screenHeight; i++)
-                {
-                    Console.SetCursorPosition(screenWidth - 1, i);
-                    Console.Write("■");
-                }
+
+                DrawPlayArea(screenWidth, screenHeight, ConsoleColor.Green, '■');
+
+
                 Console.ForegroundColor = ConsoleColor.Green;
                 if (berry.x == snakeHead.x && berry.y == snakeHead.y)
                 {
                     score++;
-                    berry.x = randomNumber.Next(1, screenWidth - 2);
-                    berry.y = randomNumber.Next(1, screenHeight - 2);
+                    SpawnBerry(screenWidth, screenHeight);
                 }
+                DrawBerry();
                 for (int i = 0; i < xBorder.Count(); i++)
                 {
                     Console.SetCursorPosition(xBorder[i], yBorder[i]);
@@ -72,11 +118,10 @@
                     break;
                 }
                 Console.SetCursorPosition(snakeHead.x, snakeHead.y);
-                Console.ForegroundColor = snakeHead.color;
-                Console.Write("■");
-                Console.SetCursorPosition(berry.x, berry.y);
+                Console.ForegroundColor = ConsoleColor.White;
+                Console.Write("H"); // hlava
+ 
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                Console.Write("■");
                 startTime = DateTime.Now;
                 buttonPressed = "no";
                 while (true)
@@ -135,6 +180,7 @@
             Console.WriteLine("Game over, Score: " + score);
             Console.SetCursorPosition(screenWidth / 5, screenHeight / 2 + 1);
         }
+
         class Pixel
         {
             public int x { get; set; }
