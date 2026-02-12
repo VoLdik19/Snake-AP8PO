@@ -1,5 +1,34 @@
-﻿namespace Snake
+using System.Numerics;
+
+namespace Snake
 {
+    public class Game{
+        public int score;
+        public bool gameOver;
+        public Pixel snake;
+        public Pixel berry;
+        public DateTime startTime;
+
+        public Game() {
+            score = 0;
+            gameOver = false;
+        }
+
+        public class Pixel
+        {
+            public Vector2 position { get; set; }
+            public ConsoleColor color { get; set; }
+        }
+
+        public enum Direction
+        {
+            Up,
+            Down,
+            Left,
+            Right
+        }
+    }
+
     class Program
     {
 
