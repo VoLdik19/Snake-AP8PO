@@ -7,14 +7,19 @@ namespace Snake
         public bool gameOver;
         public Pixel snake;
         public Pixel berry;
-        public DateTime startTime;
+        public int score;
+        public bool gameOver;
         public Vector2 playArea;
+        DateTime startTime;
 
         public Game() {
             score = 0;
             gameOver = false;
             playArea = new Vector2(64, 48);
+            startTime = DateTime.Now;
         }
+
+        public DateTime GetStartTime() { return startTime; }
 
         public class Pixel
         {
