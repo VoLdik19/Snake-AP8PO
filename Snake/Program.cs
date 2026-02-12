@@ -8,10 +8,12 @@ namespace Snake
         public Pixel snake;
         public Pixel berry;
         public DateTime startTime;
+        public Vector2 playArea;
 
         public Game() {
             score = 0;
             gameOver = false;
+            playArea = new Vector2(64, 48);
         }
 
         public class Pixel
