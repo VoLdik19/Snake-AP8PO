@@ -1,28 +1,52 @@
-using System.Numerics;
-
-namespace Snake
+﻿namespace Snake
 {
     public class Game{
-        public Pixel snake;
-        public Pixel berry;
+        public PlayArea playArea;
+        public Pixel snake { get; set; }
+        public Pixel berry { get; set; }
         public int score;
         public bool gameOver;
-        public Vector2 playArea;
-        DateTime startTime;
+        private DateTime startTime;
+        public Direction direction;
 
         public Game() {
-            score = 0;
-            gameOver = false;
-            playArea = new Vector2(64, 48);
-            startTime = DateTime.Now;
+            this.playArea = new PlayArea(64, 48, ConsoleColor.Cyan);
+            this.snake = new Pixel(playArea.size.X/2, playArea.size.Y/2, ConsoleColor.Red);
+            this.berry = new Pixel(0, 0, ConsoleColor.Magenta);
+            this.score = 0;
+            this.gameOver = false;
+            this.startTime = DateTime.Now;
+            this.direction = Direction.Right;
         }
 
         public DateTime GetStartTime() { return startTime; }
 
+        public class PlayArea
+        {
+            public Vector2Int size { get; set; }
+            public ConsoleColor color { get; set; }
+            public char symbol { get; set; }
+
+            public PlayArea(int width, int height, ConsoleColor color, char symbol = '■')
+            {
+                this.size = new Vector2Int(width, height);
+                this.color = color;
+                this.symbol = symbol;
+            }
+        }
+
         public class Pixel
         {
-            public Vector2 position { get; set; }
+            public Vector2Int position { get; set; }
             public ConsoleColor color { get; set; }
+            public char symbol { get; set; }
+
+            public Pixel(int x, int y, ConsoleColor color, char symbol = '■')
+            {
+                this.position = new Vector2Int(x, y);
+                this.color = color;
+                this.symbol = symbol;
+            }
         }
 
         public enum Direction
@@ -32,20 +56,32 @@ namespace Snake
             Left,
             Right
         }
+
+        public struct Vector2Int {
+            public int X { get; set; }
+            public int Y { get; set; }
+
+            public Vector2Int(int x, int y) {
+                X = x;
+                Y = y;
+            }
+        }
     }
 
     class Program
     {
-
-        static Pixel berry = new Pixel();
-
+        static Game game = new Game();
 
         /*
          * Refreshes the play area
          */
-        static void DrawPlayArea(int x, int y, ConsoleColor color, char areaBlock)
+        static void DrawPlayArea()
         {
-            Console.ForegroundColor = color;
+            Console.ForegroundColor = game.playArea.color;
+            int x = game.playArea.size.X;
+            int y = game.playArea.size.Y;
+            char areaBlock = game.playArea.symbol;
+
             for (int i = 0; i < x; i++)
             {
                 Console.SetCursorPosition(i, 0);
@@ -53,7 +89,7 @@ namespace Snake
             }
             for (int i = 0; i < x; i++)
             {
-                Console.SetCursorPosition(i, y - 1);
+                Console.SetCursorPosition(i, y);
                 Console.Write(areaBlock);
             }
             for (int i = 0; i < y; i++)
@@ -63,7 +99,7 @@ namespace Snake
             }
             for (int i = 0; i < y; i++)
             {
-                Console.SetCursorPosition(x - 1, i);
+                Console.SetCursorPosition(x, i);
                 Console.Write(areaBlock);
             }
         }
@@ -72,7 +108,9 @@ namespace Snake
          */
         static void DrawSnake()
         {
-
+            Console.SetCursorPosition(game.snake.position.X, game.snake.position.Y);
+            Console.ForegroundColor = game.snake.color;
+            Console.Write(game.snake.color);
         }
 
         /*
@@ -80,9 +118,25 @@ namespace Snake
          */
         static void DrawBerry()
         {
-            Console.SetCursorPosition(berry.x, berry.y);
-            Console.ForegroundColor = ConsoleColor.Red;
-            Console.Write("B");
+            Console.SetCursorPosition(game.berry.position.X, game.berry.position.Y);
+            Console.ForegroundColor = game.berry.color;
+            Console.Write(game.berry.symbol);
+        }
+
+        static void IsGameOver()
+        {
+            if (game.snake.position.X == game.playArea.size.X || game.snake.position.X == 0 || game.snake.position.Y == game.playArea.size.Y || game.snake.position.Y == 0)
+            {
+                game.gameOver = true;
+            }
+        }
+
+
+        static bool IsItNewFrameYet(int milliseconds = 500)
+        {
+            DateTime frameTime = DateTime.Now;
+            if (frameTime.Subtract(game.GetStartTime()).TotalMilliseconds > milliseconds) { return true; }
+            return false;
         }
 
         /*
@@ -92,133 +146,107 @@ namespace Snake
         {
             Random randomNumber = new Random();
 
-            berry.x = randomNumber.Next(0, x);
-            berry.y = randomNumber.Next(0, y);
-
-
-            berry.x = randomNumber.Next(1, x);
-            berry.y = randomNumber.Next(1, y);
+            var tempPosition = game.berry.position;
+            tempPosition.X = randomNumber.Next(1, x);
+            tempPosition.Y = randomNumber.Next(1, y);
+            game.berry.position = tempPosition;
         }
 
         static void Main(string[] args)
         {
 
-            Console.WindowHeight = 48;
-            Console.WindowWidth = 48;
-            int screenWidth = Console.WindowWidth;
-            int screenHeight = Console.WindowHeight;
-            Pixel snakeHead = new Pixel();
-            snakeHead.x = screenWidth / 2;
-            snakeHead.y = screenHeight / 2;
-            snakeHead.color = ConsoleColor.Red;
-            string currentStep = "RIGHT";
             List<int> xBorder = new List<int>();
             List<int> yBorder = new List<int>();
-            
-            DateTime startTime = DateTime.Now;
-            DateTime frameTime = DateTime.Now;
-            string buttonPressed = "no";
+
             while (true)
             {
                 Console.Clear();
-                if (snakeHead.x == screenWidth - 1 || snakeHead.x == 0 || snakeHead.y == screenHeight - 1 || snakeHead.y == 0)
-                {
-                    gameOver = 1;
-                }
+                IsGameOver();
 
-                DrawPlayArea(screenWidth, screenHeight, ConsoleColor.Green, '■');
+                DrawPlayArea();
 
 
                 Console.ForegroundColor = ConsoleColor.Green;
-                if (berry.x == snakeHead.x && berry.y == snakeHead.y)
+                if (game.berry.position.X == game.snake.position.X && game.berry.position.Y == game.snake.position.Y)
                 {
-                    score++;
-                    SpawnBerry(screenWidth, screenHeight);
+                    game.score++;
+                    SpawnBerry(game.playArea.size.X, game.playArea.size.Y);
                 }
                 DrawBerry();
                 for (int i = 0; i < xBorder.Count(); i++)
                 {
                     Console.SetCursorPosition(xBorder[i], yBorder[i]);
                     Console.Write("■");
-                    if (xBorder[i] == snakeHead.x && yBorder[i] == snakeHead.y)
+                    if (xBorder[i] == game.snake.position.X && yBorder[i] == game.snake.position.Y)
                     {
-                        gameOver = 1;
+                        game.gameOver = true;
                     }
                 }
-                if (gameOver == 1)
+                if (game.gameOver)
                 {
+                    Console.SetCursorPosition(game.playArea.size.X / 3, (game.playArea.size.Y / 2));
+                    Console.WriteLine("Game over, Score: " + game.score);
+                    Console.SetCursorPosition(game.playArea.size.X / 3, (game.playArea.size.Y / 2) + 1);
+                    Console.SetCursorPosition(0, game.playArea.size.Y + 1);
+                    Console.WriteLine("Press any key to exit...");
+
+                    Console.ReadKey();
                     break;
                 }
-                Console.SetCursorPosition(snakeHead.x, snakeHead.y);
-                Console.ForegroundColor = ConsoleColor.White;
-                Console.Write("H"); // hlava
- 
+                DrawSnake();
+
+
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                startTime = DateTime.Now;
-                buttonPressed = "no";
                 while (true)
                 {
-                    frameTime = DateTime.Now;
-                    if (frameTime.Subtract(startTime).TotalMilliseconds > 500) { break; }
+                    if(!IsItNewFrameYet()){break;}
+
                     if (Console.KeyAvailable)
                     {
                         ConsoleKeyInfo pressed = Console.ReadKey(true);
-                        if (pressed.Key.Equals(ConsoleKey.UpArrow) && currentStep != "DOWN" && buttonPressed == "no")
-                        {
-                            currentStep = "UP";
-                            buttonPressed = "yes";
-                        }
-                        if (pressed.Key.Equals(ConsoleKey.DownArrow) && currentStep != "UP" && buttonPressed == "no")
-                        {
-                            currentStep = "DOWN";
-                            buttonPressed = "yes";
-                        }
-                        if (pressed.Key.Equals(ConsoleKey.LeftArrow) && currentStep != "RIGHT" && buttonPressed == "no")
-                        {
-                            currentStep = "LEFT";
-                            buttonPressed = "yes";
-                        }
-                        if (pressed.Key.Equals(ConsoleKey.RightArrow) && currentStep != "LEFT" && buttonPressed == "no")
-                        {
-                            currentStep = "RIGHT";
-                            buttonPressed = "yes";
+                        switch(pressed.Key){
+                            case ConsoleKey.UpArrow:
+                                game.direction = Game.Direction.Up;
+                                break;
+                            case ConsoleKey.DownArrow:
+                                game.direction = Game.Direction.Down;
+                                break;
+                            case ConsoleKey.LeftArrow:
+                                game.direction = Game.Direction.Left;
+                                break;
+                            case ConsoleKey.RightArrow:
+                                game.direction = Game.Direction.Right;
+                                break;
                         }
                     }
                 }
-                xBorder.Add(snakeHead.x);
-                yBorder.Add(snakeHead.y);
-                switch (currentStep)
+                xBorder.Add(game.snake.position.X);
+                yBorder.Add(game.snake.position.Y);
+                var snakePos = game.snake.position;
+                switch (game.direction)
                 {
-                    case "UP":
-                        snakeHead.y--;
+                    case Game.Direction.Up:
+                        snakePos.Y--;
                         break;
-                    case "DOWN":
-                        snakeHead.y++;
+                    case Game.Direction.Down:
+                        snakePos.Y++;
                         break;
-                    case "LEFT":
-                        snakeHead.x--;
+                    case Game.Direction.Left:
+                        snakePos.X--;
                         break;
-                    case "RIGHT":
-                        snakeHead.x++;
+                    case Game.Direction.Right:
+                        snakePos.X++;
                         break;
                 }
-                if (xBorder.Count() > score)
+                game.snake.position = snakePos;
+                if (xBorder.Count() > game.score)
                 {
                     xBorder.RemoveAt(0);
                     yBorder.RemoveAt(0);
                 }
             }
-            Console.SetCursorPosition(screenWidth / 5, screenHeight / 2);
-            Console.WriteLine("Game over, Score: " + score);
-            Console.SetCursorPosition(screenWidth / 5, screenHeight / 2 + 1);
         }
 
-        class Pixel
-        {
-            public int x { get; set; }
-            public int y { get; set; }
-            public ConsoleColor color; }
-        }
+
     }
-
-//¦
+}
