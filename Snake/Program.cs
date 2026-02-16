@@ -71,6 +71,7 @@ namespace Snake
     class Program
     {
         static Game game = new Game();
+        static DateTime lastFrameTime = DateTime.Now;
 
         /*
          * Refreshes the play area
@@ -110,7 +111,7 @@ namespace Snake
         {
             Console.SetCursorPosition(game.snake.position.X, game.snake.position.Y);
             Console.ForegroundColor = game.snake.color;
-            Console.Write(game.snake.color);
+            Console.Write(game.snake.symbol);
         }
 
         /*
@@ -125,7 +126,7 @@ namespace Snake
 
         static void IsGameOver()
         {
-            if (game.snake.position.X == game.playArea.size.X || game.snake.position.X == 0 || game.snake.position.Y == game.playArea.size.Y || game.snake.position.Y == 0)
+            if (game.snake.position.X >= game.playArea.size.X || game.snake.position.X <= 0 || game.snake.position.Y >= game.playArea.size.Y || game.snake.position.Y <= 0)
             {
                 game.gameOver = true;
             }
@@ -135,7 +136,11 @@ namespace Snake
         static bool IsItNewFrameYet(int milliseconds = 500)
         {
             DateTime frameTime = DateTime.Now;
-            if (frameTime.Subtract(game.GetStartTime()).TotalMilliseconds > milliseconds) { return true; }
+            if (frameTime.Subtract(lastFrameTime).TotalMilliseconds >= milliseconds)
+            {
+                lastFrameTime = frameTime;
+                return true;
+            }
             return false;
         }
 
@@ -197,10 +202,8 @@ namespace Snake
 
 
                 Console.ForegroundColor = ConsoleColor.Cyan;
-                while (true)
+                while (!IsItNewFrameYet(120))
                 {
-                    if(!IsItNewFrameYet()){break;}
-
                     if (Console.KeyAvailable)
                     {
                         ConsoleKeyInfo pressed = Console.ReadKey(true);
@@ -219,6 +222,8 @@ namespace Snake
                                 break;
                         }
                     }
+
+                    Thread.Sleep(1);
                 }
                 xBorder.Add(game.snake.position.X);
                 yBorder.Add(game.snake.position.Y);
