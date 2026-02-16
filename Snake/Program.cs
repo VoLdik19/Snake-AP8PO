@@ -3,8 +3,6 @@ using System.Numerics;
 namespace Snake
 {
     public class Game{
-        public int score;
-        public bool gameOver;
         public Pixel snake;
         public Pixel berry;
         public int score;
@@ -109,8 +107,6 @@ namespace Snake
             Console.WindowWidth = 48;
             int screenWidth = Console.WindowWidth;
             int screenHeight = Console.WindowHeight;
-            int score = 5;
-            int gameOver = 0;
             Pixel snakeHead = new Pixel();
             snakeHead.x = screenWidth / 2;
             snakeHead.y = screenHeight / 2;
