@@ -1,4 +1,4 @@
-﻿namespace Snake
+namespace Snake
 {
     public class Game{
         public PlayArea playArea;
