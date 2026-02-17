@@ -1,21 +1,26 @@
 namespace Snake
 {
-    public class Game{
+    public class Game
+    {
         private readonly PlayArea _playArea;
+        private readonly DateTime _startTime;
+        private Direction _direction;
+
         public PlayArea Area => _playArea;
         public Pixel Snake { get; }
         public Pixel Berry { get; }
         public int Score { get; set; }
         public bool GameOver { get; set; }
-        private readonly DateTime _startTime;
-        private Direction _direction;
+        public DateTime StartTime => _startTime;
+
         public Direction CurrentDirection
         {
             get => _direction;
             set => _direction = value;
         }
 
-        public Game() {
+        public Game() 
+        {
             _playArea = new PlayArea(64, 48, ConsoleColor.Cyan);
             Snake = new Pixel(_playArea.Size.X/2, _playArea.Size.Y/2, ConsoleColor.Red);
             Berry = new Pixel(0, 0, ConsoleColor.Magenta);
@@ -24,8 +29,6 @@ namespace Snake
             _startTime = DateTime.Now;
             CurrentDirection = Direction.Right;
         }
-
-        public DateTime StartTime => _startTime;
 
         public class PlayArea(int width, int height, ConsoleColor color, char symbol = '■')
         {
@@ -92,6 +95,7 @@ namespace Snake
                 Console.Write(areaBlock);
             }
         }
+
         /*
          * Refreshes the snake
          */
@@ -114,12 +118,14 @@ namespace Snake
 
         private static void IsGameOver()
         {
-            if (Game.Snake.Position.X >= Game.Area.Size.X || Game.Snake.Position.X <= 0 || Game.Snake.Position.Y >= Game.Area.Size.Y || Game.Snake.Position.Y <= 0)
+            if (Game.Snake.Position.X >= Game.Area.Size.X ||
+                Game.Snake.Position.X <= 0 ||
+                Game.Snake.Position.Y >= Game.Area.Size.Y ||
+                Game.Snake.Position.Y <= 0)
             {
                 Game.GameOver = true;
             }
         }
-
 
         static bool IsItNewFrameYet(int milliseconds = 500)
         {
@@ -145,101 +151,146 @@ namespace Snake
             Game.Berry.Position = tempPosition;
         }
 
+        private static void PrepareFrame()
+        {
+            Console.Clear();
+            IsGameOver();
+            DrawPlayArea();
+        }
+
+        private static void HandleBerryCollision()
+        {
+            Console.ForegroundColor = ConsoleColor.Green;
+
+            if (Game.Berry.Position.X == Game.Snake.Position.X &&
+                Game.Berry.Position.Y == Game.Snake.Position.Y)
+            {
+                Game.Score++;
+                SpawnBerry(Game.Area.Size.X, Game.Area.Size.Y);
+            }
+        }
+
+        private static void DrawSnakeBodyAndDetectCollision(List<int> xBorder, List<int> yBorder)
+        {
+            for (int i = 0; i < xBorder.Count; i++)
+            {
+                Console.SetCursorPosition(xBorder[i], yBorder[i]);
+                Console.Write('■');
+
+                if (xBorder[i] == Game.Snake.Position.X && yBorder[i] == Game.Snake.Position.Y)
+                {
+                    Game.GameOver = true;
+                }
+            }
+        }
+
+        private static bool HandleGameOver()
+        {
+            if (!Game.GameOver)
+            {
+                return false;
+            }
+
+            Console.SetCursorPosition(Game.Area.Size.X / 3, Game.Area.Size.Y / 2);
+            Console.WriteLine("Game over, Score: " + Game.Score);
+            Console.SetCursorPosition(0, Game.Area.Size.Y + 1);
+            Console.WriteLine("Press any key to exit...");
+            Console.ReadKey();
+            return true;
+        }
+
+        private static void WaitForNextFrameAndReadInput()
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+
+            while (!IsItNewFrameYet(120))
+            {
+                ReadInput();
+                Thread.Sleep(1);
+            }
+        }
+
+        private static void ReadInput()
+        {
+            if (!Console.KeyAvailable)
+            {
+                return;
+            }
+
+            ConsoleKeyInfo pressed = Console.ReadKey(true);
+            switch (pressed.Key)
+            {
+                case ConsoleKey.UpArrow:
+                    Game.CurrentDirection = Game.Direction.Up;
+                    break;
+                case ConsoleKey.DownArrow:
+                    Game.CurrentDirection = Game.Direction.Down;
+                    break;
+                case ConsoleKey.LeftArrow:
+                    Game.CurrentDirection = Game.Direction.Left;
+                    break;
+                case ConsoleKey.RightArrow:
+                    Game.CurrentDirection = Game.Direction.Right;
+                    break;
+            }
+        }
+
+        private static void UpdateSnakePositionAndTail(List<int> xBorder, List<int> yBorder)
+        {
+            xBorder.Add(Game.Snake.Position.X);
+            yBorder.Add(Game.Snake.Position.Y);
+            MoveSnake();
+
+            if (xBorder.Count > Game.Score)
+            {
+                xBorder.RemoveAt(0);
+                yBorder.RemoveAt(0);
+            }
+        }
+
+        private static void MoveSnake()
+        {
+            var snakePos = Game.Snake.Position;
+            switch (Game.CurrentDirection)
+            {
+                case Game.Direction.Up:
+                    snakePos.Y--;
+                    break;
+                case Game.Direction.Down:
+                    snakePos.Y++;
+                    break;
+                case Game.Direction.Left:
+                    snakePos.X--;
+                    break;
+                case Game.Direction.Right:
+                    snakePos.X++;
+                    break;
+            }
+
+            Game.Snake.Position = snakePos;
+        }
+
         static void Main()
         {
-
             List<int> xBorder = new List<int>();
             List<int> yBorder = new List<int>();
 
             while (true)
             {
-                Console.Clear();
-                IsGameOver();
-
-                DrawPlayArea();
-
-
-                Console.ForegroundColor = ConsoleColor.Green;
-                if (Game.Berry.Position.X == Game.Snake.Position.X && Game.Berry.Position.Y == Game.Snake.Position.Y)
-                {
-                    Game.Score++;
-                    SpawnBerry(Game.Area.Size.X, Game.Area.Size.Y);
-                }
+                PrepareFrame();
+                HandleBerryCollision();
                 DrawBerry();
-                for (int i = 0; i < xBorder.Count(); i++)
-                {
-                    Console.SetCursorPosition(xBorder[i], yBorder[i]);
-                    Console.Write("■");
-                    if (xBorder[i] == Game.Snake.Position.X && yBorder[i] == Game.Snake.Position.Y)
-                    {
-                        Game.GameOver = true;
-                    }
-                }
-                if (Game.GameOver)
-                {
-                    Console.SetCursorPosition(Game.Area.Size.X / 3, (Game.Area.Size.Y / 2));
-                    Console.WriteLine("Game over, Score: " + Game.Score);
-                    Console.SetCursorPosition(Game.Area.Size.X / 3, (Game.Area.Size.Y / 2) + 1);
-                    Console.SetCursorPosition(0, Game.Area.Size.Y + 1);
-                    Console.WriteLine("Press any key to exit...");
+                DrawSnakeBodyAndDetectCollision(xBorder, yBorder);
 
-                    Console.ReadKey();
+                if (HandleGameOver())
+                {
                     break;
                 }
+
                 DrawSnake();
-
-
-                Console.ForegroundColor = ConsoleColor.Cyan;
-                while (!IsItNewFrameYet(120))
-                {
-                    if (Console.KeyAvailable)
-                    {
-                        ConsoleKeyInfo pressed = Console.ReadKey(true);
-                        switch(pressed.Key){
-                            case ConsoleKey.UpArrow:
-                                Game.CurrentDirection = Game.Direction.Up;
-                                break;
-                            case ConsoleKey.DownArrow:
-                                Game.CurrentDirection = Game.Direction.Down;
-                                break;
-                            case ConsoleKey.LeftArrow:
-                                Game.CurrentDirection = Game.Direction.Left;
-                                break;
-                            case ConsoleKey.RightArrow:
-                                Game.CurrentDirection = Game.Direction.Right;
-                                break;
-                        }
-                    }
-
-                    Thread.Sleep(1);
-                }
-                xBorder.Add(Game.Snake.Position.X);
-                yBorder.Add(Game.Snake.Position.Y);
-                var snakePos = Game.Snake.Position;
-                switch (Game.CurrentDirection)
-                {
-                    case Game.Direction.Up:
-                        snakePos.Y--;
-                        break;
-                    case Game.Direction.Down:
-                        snakePos.Y++;
-                        break;
-                    case Game.Direction.Left:
-                        snakePos.X--;
-                        break;
-                    case Game.Direction.Right:
-                        snakePos.X++;
-                        break;
-                }
-                Game.Snake.Position = snakePos;
-                if (xBorder.Count() > Game.Score)
-                {
-                    xBorder.RemoveAt(0);
-                    yBorder.RemoveAt(0);
-                }
+                WaitForNextFrameAndReadInput();
+                UpdateSnakePositionAndTail(xBorder, yBorder);
             }
         }
-
-
     }
 }
