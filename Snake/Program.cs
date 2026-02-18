@@ -108,7 +108,7 @@ namespace Snake
         public void DrawGameOver(int score, GameBoard board)
         {
             Console.SetCursorPosition(board.Width / 5, board.Height / 2);
-            Console.WriteLine($"Game over, Score: {score}");
+            Console.WriteLine($"Game over, Score: {score - 5}");
             Console.SetCursorPosition(board.Width / 5, board.Height / 2 + 1);
         }
 
